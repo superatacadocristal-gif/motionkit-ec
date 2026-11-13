@@ -1,6 +1,6 @@
-## EdyTools 2.0.0-beta
+## EdyTools 2.1.0-beta
 
-[Baixar instalador Windows (.zip)](./downloads/EdyTools-2.0.0-beta-Windows.zip) · [Baixar script EdyTools.jsx](./EdyTools.jsx)
+[Baixar instalador Windows (.zip)](./downloads/EdyTools-2.1.0-beta-Windows.zip) · [Baixar script EdyTools.jsx](./EdyTools.jsx)
 
 A nova interface está em [EdyTools.jsx](./EdyTools.jsx). Veja as [duas opções de instalação e o guia de uso](./EDYTOOLS.md). O histórico do MotionKit EC continua abaixo.
 

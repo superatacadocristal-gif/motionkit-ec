@@ -1,4 +1,4 @@
-/* EdyTools 2.0.0-beta — by Edy Bastos — 11/2026
+/* EdyTools 2.1.0-beta — by Edy Bastos — 11/2026
  * MIT. Interface original e motor de ferramentas derivado do MotionKit EC.
  */
 
@@ -12,6 +12,10 @@
   var category=ui.add('dropdownlist',undefined,['Todas','Movimento','Esmaecer','Pop-up','Torcao','Bounce','Destaques'],{name:'edy_category'});category.selection=0;
   var strength=ui.add('edittext',undefined,'100',{name:'edy_strength'});
   search.helpTip='Buscar por nome ou movimento';duration.helpTip='Duração em segundos';strength.helpTip='Intensidade de 10 a 200%';
+  var countMode=false,countAtCursor=false,countToEnd=false;
+  var countStart=ui.add('edittext',undefined,'500',{name:'edy_count_start'});
+  var countEnd=ui.add('edittext',undefined,'1000',{name:'edy_count_end'});
+  var countDuration=ui.add('edittext',undefined,'2',{name:'edy_count_duration'});
   var tab=0,textMode=false,paused=false,previewStart=Date.now(),pausedTime=0;
   var dirty=true;
   var hits=[],hover='',themeStamp=0,selectionStamp=0,lastSelection='',message='Selecione uma camada para começar.',messageKind='hint';
@@ -51,7 +55,7 @@
   var curveGraph={notify:function(){},graphics:{}};
   var prefix={text:'VIDEO_'},step={text:'0,12'},direction={selection:{index:0}};
   function state(isText){return {text:isText,cat:{selection:{text:'Todas'}},search:search,dur:duration,strength:strength,
-    selected:0,offset:0,visible:[],radios:[{value:true},{value:false},{value:false}]};}
+    directionIndex:0,selected:0,offset:0,visible:[],radios:[{value:true},{value:false},{value:false}]};}
   var objState=state(false),textState=state(true);
   function current(){return textMode?textState:objState;}
   function num(s,min,max){var n=Number(String(s).replace(',','.'));return isFinite(n)&&n>=min&&n<=max?n:null;}
@@ -102,7 +106,8 @@
     hit(id,x,y,w,h,fn,text||id);
   }
   function restart(){dirty=true;previewStart=Date.now();pausedTime=0;}
-  function switchTab(n){tab=n;search.visible=duration.visible=strength.visible=category.visible=n===0;restart();layout();}
+  function switchTab(n){tab=n;restart();layout();}
+  function animateMode(n){countMode=n===2;if(countMode)paused=false;textMode=n===1;current().cat.selection.text=category.selection.text;fillList(current());restart();layout();}
   function editValue(field,title,min,max){var value=prompt(title,field.text);if(value===null)return;if(min!==undefined&&num(value,min,max)===null){say('Valor fora do intervalo.');return;}field.text=value;}
   function selection(){
     if(Date.now()-selectionStamp<250)return;selectionStamp=Date.now();
@@ -124,6 +129,7 @@
     return v;
   }
   function motion(g,p,x,y,w,h,isText,t){
+    p=resolveDirection(p,current());
     var mode=chosenMode(current()),frames=p.kind==='highlight'?p.frames:mode===1?p.exit:p.enter;
     if(mode===2&&p.kind!=='highlight'){frames=t<.5?p.enter:p.exit;t=t<.5?t*2:(t-.5)*2;}
     var v=sample(frames,t),color=palette.accent.slice(0);color[3]=Math.max(0,Math.min(1,v.o));
@@ -160,8 +166,11 @@
   }
   function drawAnimate(g,w,h){
     var st=current(),p=chosen(st),gap=8,cw=(w-40)/2;
-    button(g,'objects','Objetos','object',16,76,cw,34,function(){textMode=false;current().cat.selection.text=category.selection.text;fillList(current());restart();},!textMode);
-    button(g,'texts','Textos','text',24+cw,76,cw,34,function(){textMode=true;current().cat.selection.text=category.selection.text;fillList(current());restart();},textMode);
+    var tw=(w-48)/3;
+    button(g,'objects','Objetos',null,16,76,tw,34,function(){animateMode(0);},!textMode&&!countMode);
+    button(g,'texts','Textos',null,24+tw,76,tw,34,function(){animateMode(1);},textMode&&!countMode);
+    button(g,'counter','Contador',null,32+2*tw,76,tw,34,function(){animateMode(2);},countMode);
+    if(countMode){drawCounter(g,w);return;}
     button(g,'search','', 'search',w-54,122,38,32,function(){fillList(st);restart();});
 
     var cardH=cardHeight(),top=205;
@@ -185,10 +194,70 @@
     label(g,'Duração (s)',16,yy+41,11,palette.muted);
     label(g,'Intensidade (%)',w/2+4,yy+41,11,palette.muted);
     label(g,p&&p.kind==='highlight'?'Destaque na posição da agulha':chosenMode(st)===1?'Saída no fim da camada':chosenMode(st)===2?'Entrada e saída nos limites da camada':'Entrada no início da camada',16,yy+98,11,palette.muted,false,w-32);
+    if(p&&p.directional){
+      var dw=(w-56)/4,names=['Subir','Descer','Esquerda','Direita'];
+      for(var d=0;d<4;d++)(function(n){button(g,'direction_'+n,['↑','↓','←','→'][n],null,16+n*(dw+8),yy+111,dw,30,function(){st.directionIndex=n;restart();},st.directionIndex===n);hits[hits.length-1].tip=names[n];})(d);
+    }else{
     button(g,'pause',paused?'Reproduzir':'Pausar',paused?'play':'pause',16,yy+111,cw,30,function(){if(!paused)pausedTime=(Date.now()-previewStart)/1000;else previewStart=Date.now()-pausedTime*1000;paused=!paused;});
     button(g,'restart','Reiniciar','reset',24+cw,yy+111,cw,30,restart);
+    }
     button(g,'apply','Aplicar animação','play',16,yy+151,w-32,40,function(){applySelected(st);},false,true);
   }
+  function drawCounter(g,w){
+    var a=num(countStart.text,-1e9,1e9),b=num(countEnd.text,-1e9,1e9),d=num(countDuration.text,.01,86400)||2;
+    var t=Math.min(1,((Date.now()-previewStart)/1000)%(d+.8)/d);
+    box(g,16,128,w-32,142,14,palette.tint,palette.edge);
+    label(g,'CONTAGEM AUTOMÁTICA',32,145,10,palette.muted,true);
+    label(g,a===null||b===null?'—':Math.round(a+(b-a)*t),32,176,36,palette.accent,true,w-64);
+    label(g,a>b?'Contagem regressiva':'Contagem crescente',32,238,12,palette.muted);
+    label(g,'Número inicial',16,288,12,palette.muted);
+    label(g,'Número final',w/2+4,288,12,palette.muted);
+    label(g,'Duração em segundos',16,358,12,palette.muted);
+    var cw=(w-40)/2;
+    button(g,'count_layer','Início',null,16,428,cw,32,function(){countAtCursor=false;},!countAtCursor);
+    button(g,'count_cursor','Na agulha',null,24+cw,428,cw,32,function(){countAtCursor=true;},countAtCursor);
+    button(g,'count_fit',countToEnd?'Até o fim da camada ✓':'Usar até o fim da camada','layers',16,474,w-32,32,function(){countToEnd=!countToEnd;layout();},countToEnd);
+    label(g,'Ajuste o tempo pelas duas chaves',16,520,11,palette.muted,false,w-32);
+    label(g,'do efeito EdyTools Contador.',16,537,11,palette.muted,false,w-32);
+    button(g,'apply_counter','Aplicar contagem','play',16,558,w-32,36,applyCounter,false,true);
+  }
+  function applyCounter(){
+    var co=context();if(!co)return;
+    var a=num(countStart.text,-1e9,1e9),b=num(countEnd.text,-1e9,1e9),d=num(countDuration.text,co.frameDuration,86400);
+    if(!String(countStart.text).replace(/\s/g,'')||!String(countEnd.text).replace(/\s/g,'')||a===null||b===null||Math.floor(a)!==a||Math.floor(b)!==b||(!countToEnd&&(d===null||!String(countDuration.text).replace(/\s/g,'')))){say('Erro: use números inteiros e duração válida.');return;}
+    var layers=co.selectedLayers,done=0,skips=[],firstTime=null;
+    app.beginUndoGroup('EdyTools - contagem');
+    try{for(var i=0;i<layers.length;i++){
+      var layer=layers[i],effect=null,source=null,previous='',previousEnabled=false;
+      try{
+        var group=layer.property('ADBE Text Properties');source=group&&group.property('ADBE Text Document');
+        if(layer.locked||!source)throw Error('selecione texto desbloqueado');
+        previous=source.expression||'';previousEnabled=source.expressionEnabled;
+        var owned=previous.indexOf('// EdyTools contador\n')===0;
+        if(source.numKeys||previous&&!owned)throw Error('texto já tem animação ou expressão');
+        var start=countAtCursor?co.time:Math.max(0,layer.inPoint),limit=Math.min(co.duration,layer.outPoint),end=countToEnd?limit:start+d;
+        if(start<Math.max(0,layer.inPoint)||end>limit+.000001||end-start<co.frameDuration)throw Error('contagem fora dos limites da camada');
+        var effects=layer.property('ADBE Effect Parade'),oldEffect=null;
+        if(owned){var oldName=previous.match(/effect\(("[^"\n]+")\)/);if(oldName)oldEffect=effects.property(JSON.parse(oldName[1]));}
+        effect=effects.addProperty('ADBE Slider Control');
+        effect.name='EdyTools Contador '+Date.now()+' '+i;
+        var slider=effect.property(1);slider.setValueAtTime(start,a);slider.setValueAtTime(end,b);
+        slider.setInterpolationTypeAtKey(1,KeyframeInterpolationType.LINEAR,KeyframeInterpolationType.LINEAR);
+        slider.setInterpolationTypeAtKey(2,KeyframeInterpolationType.LINEAR,KeyframeInterpolationType.LINEAR);
+        source.expression='// EdyTools contador\nMath.round(effect('+JSON.stringify(effect.name)+')('+'"Slider"'+')).toString()';
+        source.expressionEnabled=true;
+        if(source.expressionError||String(source.valueAtTime(start,false).text)!==String(a)||String(source.valueAtTime(end,false).text)!==String(b))throw Error('não foi possível validar a contagem');
+        if(oldEffect&&oldEffect.matchName==='ADBE Slider Control')oldEffect.remove();
+        effect=null;done++;if(firstTime===null)firstTime=start;
+      }catch(error){
+        if(effect){try{source.expression=previous;source.expressionEnabled=previousEnabled;effect.remove();}catch(ignore){}}
+        skips.push(layer.name+': '+error.message);
+      }
+    }}finally{app.endUndoGroup();}
+    if(done){co.time=firstTime;say('Contagem aplicada em '+done+(done===1?' camada':' camadas')+(skips.length?' · '+skips.length+' ignoradas':''));}
+    else say('Erro: '+(skips[0]||'selecione texto.'));
+  }
+
   function curveDrawing(g,vals,x,y,w,h,color){
     var x1=vals[0]/100,y1=x1*vals[1],x2=1-vals[2]/100,y2=1-(1-x2)*vals[3],points=[];
     for(var i=0;i<=64;i++){var t=i/64,q=1-t;points.push([x+w*(3*q*q*t*x1+3*q*t*t*x2+t*t*t),y+h*(1-(3*q*q*t*y1+3*q*t*t*y2+t*t*t))]);}
@@ -277,6 +346,11 @@
     dirty=true;
     var w=Math.max(280,(ui.size.width||432)-12),h=Math.max(720,(ui.size.height||832)-12);
     canvas.bounds=[0,0,w,h];
+    search.visible=duration.visible=strength.visible=category.visible=tab===0&&!countMode;
+    countStart.visible=countEnd.visible=countDuration.visible=tab===0&&countMode;
+    countStart.bounds=[16,310,w/2-4,346];countEnd.bounds=[w/2+4,310,w-16,346];
+    countDuration.bounds=[16,380,w-16,414];
+    countDuration.enabled=!countToEnd;
     search.bounds=[16,122,w-62,154];category.bounds=[16,164,w-16,194];
     duration.bounds=[16,topFields(),w/2-4,topFields()+31];
     strength.bounds=[w/2+4,topFields(),w-16,topFields()+31];
@@ -292,6 +366,7 @@
   category.onChange=function(){current().cat.selection.text=category.selection.text;fillList(current());restart();};
   search.onChanging=function(){fillList(current());restart();};
   search.onChange=search.onChanging;duration.onChange=strength.onChange=restart;
+  countStart.onChange=countEnd.onChange=countDuration.onChange=restart;
   var oldPresets=[];
   function F(t,x,y,s,r,o){return {t:t,x:x||0,y:y||0,s:(s===undefined?1:s),r:r||0,o:(o===undefined?1:o)};}
   function addPreset(group,name,desc,frames){
@@ -371,10 +446,10 @@
   var twists=['Giro +90','Giro -90','Meia-volta','Torcao curta','Espiral','Giro elastico'];
   var bounces=['Baixo','Cima','Esquerda','Direita','Escala','Diagonal'];
   for(var k=0;k<6;k++){
-    addPair('Movimento',moves[k],k,6+k,'slide deslizar entrada saida mover '+moves[k]);
+    if(k===0||k>=4){addPair('Movimento',k===0?'Deslizar':moves[k],k,6+k,'slide deslizar subir descer esquerda direita entrada saida mover '+moves[k]);if(k===0)mkPresets[mkPresets.length-1].directional=true;}
     addPair('Pop-up',pops[k],12+k,18+k,'popup pop zoom crescimento escala '+pops[k]);
     addPair('Torcao',twists[k],24+k,30+k,'twister twist spin rotacao girar torcer '+twists[k]);
-    addPair('Bounce',bounces[k],36+k,42+k,'bounce quicar elasticidade salto pular '+bounces[k]);
+    if(k===0||k>=4){addPair('Bounce',k===0?'Quicar':bounces[k],36+k,42+k,'bounce quicar subir descer esquerda direita elasticidade salto pular '+bounces[k]);if(k===0){mkPresets[mkPresets.length-1].directional=true;mkPresets[mkPresets.length-1].exit=oldPresets[43].frames;}}
   }
   function addHighlight(name,frames,desc,aliases){mkPresets.push({category:'Destaques',name:name,kind:'highlight',frames:frames,desc:desc,aliases:aliases||''});}
   // Cada destaque retorna a posicao, escala, rotacao e opacidade de origem.
@@ -401,7 +476,13 @@
     for(var i=0;i<words.length;i++)if(words[i]){var m=matchTerm(words[i],p);if(m===99)return 99;total+=m;}
     return total;
   }
-  function chosen(st){var i=st.selected;return i>=0&&i<st.visible.length?mkPresets[st.visible[i]]:null;}
+  function resolveDirection(p,st){
+    if(!p||!p.directional)return p;
+    var q={};for(var key in p)q[key]=p[key];
+    function turn(frames){var result=[];for(var i=0;i<frames.length;i++){var f=frames[i],d=st.directionIndex||0;result.push(F(f.t,d===2?f.y:d===3?-f.y:0,d===0?f.y:d===1?-f.y:0,f.s,f.r,f.o));}return result;}
+    q.enter=turn(p.enter);q.exit=turn(p.exit);return q;
+  }
+  function chosen(st){var i=st.selected;return i>=0&&i<st.visible.length?resolveDirection(mkPresets[st.visible[i]],st):null;}
   function fillList(st){var type=st.cat.selection?st.cat.selection.text:'Todas',terms=st.search.text,items=[];
     for(var i=0;i<mkPresets.length;i++){var p=mkPresets[i];if(type!=='Todas'&&type!==p.category)continue;
       var s=score(terms,p);if(s<99)items.push({idx:i,score:s});}

@@ -38,5 +38,44 @@
     themeStamp=0;theme();check(themeKey===(themeMode?'light':'dark'),'Tema');
     for(var page=0;page<4;page++){switchTab(page);draw();check(hits.length>0,'Navegacao');}
   }
+  lower.remove();upper.remove();
+  var ct=co.layers.addText('1000');ct.selected=true;ct.inPoint=1;ct.outPoint=4;
+  var src=ct.property('ADBE Text Properties').property('ADBE Text Document');
+  var fx=ct.property('ADBE Effect Parade');
+  countStart.text='500';countEnd.text='1000';countDuration.text='2';co.time=3;
+  applyCounter();check(message.indexOf('Contagem aplicada')===0,'Contador '+message);
+  check(src.valueAtTime(1,false).text==='500','Valor inicial');
+  check(src.valueAtTime(2,false).text==='750','Valor intermediario');
+  check(src.valueAtTime(3,false).text==='1000','Valor final');
+  check(src.valueAtTime(4,false).text==='1000','Valor permanece');
+  check(fx.numProperties===1,'Um efeito');
+  countStart.text='1000';countEnd.text='-100';applyCounter();
+  check(fx.numProperties===1,'Reaplicar sem duplicar');
+  check(src.valueAtTime(2,false).text==='450','Regressiva');
+  check(src.valueAtTime(3,false).text==='-100','Final negativo');
+  var expression=src.expression;
+  countDuration.text='8';applyCounter();check(src.expression===expression&&fx.numProperties===1,'Limite preserva contagem');
+  countAtCursor=true;countToEnd=true;co.time=2;applyCounter();
+  check(src.valueAtTime(2,false).text==='1000'&&src.valueAtTime(4,false).text==='-100','Agulha ate fim');
+  var slider=fx.property(1).property(1);slider.removeKey(2);slider.setValueAtTime(3,-100);
+  check(src.valueAtTime(2.5,false).text==='450','Retiming na timeline');
+  countStart.text='';expression=src.expression;applyCounter();check(src.expression===expression,'Vazio rejeitado');
+  countStart.text='1.5';applyCounter();check(src.expression===expression,'Fracao rejeitada');
+  src.expression='"externa"';countStart.text='500';applyCounter();check(src.expression==='"externa"','Expressao externa preservada');
+  ct.remove();
+  for(var dp=0;dp<mkPresets.length;dp++)if(mkPresets[dp].directional){
+    for(var di=0;di<4;di++){
+      objState.directionIndex=di;var preset=resolveDirection(mkPresets[dp],objState);
+      var entry=preset.enter[0],out=preset.exit[preset.exit.length-1];
+      check(di===0?entry.y>0&&out.y<0:di===1?entry.y<0&&out.y>0:di===2?entry.x>0&&out.x<0:entry.x<0&&out.x>0,'Direcao coerente '+dp+' '+di);
+      var dl=co.layers.addSolid([1,1,1],'Direcao',100,100,1);dl.selected=true;
+      objState.visible=[dp];objState.selected=0;objState.radios=[{value:true},{value:false},{value:false}];applySelected(objState);
+      check(message.indexOf('Efeito aplicado')===0,'Aplicar direcao');dl.remove();
+    }
+  }
+  animateMode(2);switchTab(0);draw();check(countStart.visible&&!search.visible,'Campos contador');
+  ui.size=[300,720];layout();draw();
+  for(var hi=0;hi<hits.length;hi++)if(hits[hi].id==='apply_counter')check(hits[hi].y+hits[hi].h<canvas.size.height-115,'Sem sobreposicao contador');
+  animateMode(0);check(!countStart.visible&&search.visible,'Voltar animacoes');
   writeLn(checks+' verificacoes aprovadas');
 

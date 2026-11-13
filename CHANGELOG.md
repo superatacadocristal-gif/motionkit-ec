@@ -1,3 +1,10 @@
+## EdyTools 2.1.0-beta
+
+- Deslizar e Quicar agrupados com setas de direção coerentes na entrada/saída e nas prévias.
+- Contador crescente/regressivo para textos com início, fim, duração, início na agulha e ajuste ao fim da camada.
+- Duas chaves de controle para retiming, validação de limites e reaplicação sem duplicar o efeito.
+- 489 verificações automatizadas no motor EffectCraft.
+
 ## EdyTools 2.0.0-beta
 
 - Interface reconstruída com cartões, ícones vetoriais e navegação inferior.
