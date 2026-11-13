@@ -1,28 +1,28 @@
-/* MotionKit EC 0.8.1-beta — by Edy Bastos, 11/2026
+/* MotionKit EC 0.9.3-beta — by Edy Bastos, 11/2026
  * Painel ScriptUI original para EffectCraft. Licenca MIT.
  * Interface com abas nativas, controles compativeis com temas claro/escuro.
  * Presets: animacoes genericas originais; sem codigo de terceiros.
  */
 (function(thisObj){
-  var ui=thisObj instanceof Panel ? thisObj : new Window('palette','MotionKit EC 0.8.1',undefined,{resizeable:true});
+  var ui=thisObj instanceof Panel ? thisObj : new Window('palette','MotionKit EC 0.9.3 beta',undefined,{resizeable:true});
   // v0.8.1: avoid nested ScriptUI tabbedpanels. They overlap in narrow EffectCraft docked panels.
   // Use a two-level button navigation + one stack of mutually exclusive content pages.
   ui.orientation='column'; ui.alignChildren=['fill','top']; ui.spacing=6; ui.margins=10;
-  ui.minimumSize=[390,650]; ui.preferredSize=[404,665];
+  ui.minimumSize=[390,750]; ui.preferredSize=[404,760];
   var orange=[.96,.43,.08,1],faint=[.60,.57,.54,1];
   var line=ui.add('group');line.orientation='row';line.alignment=['fill','top'];line.spacing=12;
   line.alignChildren=['left','center'];line.preferredSize.height=27;
   var header=line.add('statictext',undefined,'MOTIONKIT EC');header.preferredSize=[161,24];
   try{header.graphics.font=ScriptUI.newFont('Segoe UI','BOLD',12);header.graphics.foregroundColor=header.graphics.newPen(header.graphics.PenType.SOLID_COLOR,orange,1);}catch(e){}
-  var version=line.add('statictext',undefined,'v0.8.1 beta');version.preferredSize=[101,21];
+  var version=line.add('statictext',undefined,'v0.9.3 beta');version.preferredSize=[101,21];
   // Main navigation: fixed height and width, independent of the contents.
   var topNav=ui.add('group',undefined,undefined,{name:'mk_main_navigation'});
   topNav.orientation='row';topNav.alignment=['fill','top'];topNav.alignChildren=['fill','center'];topNav.spacing=4;topNav.margins=0;
   topNav.preferredSize.height=34;topNav.minimumSize.height=34;
-  var mainNames=['Âncora','Animações','Curvas','Camadas'],mainWidths=[81,103,68,85],mainButtons=[];
+  var mainNames=['Início','Animar','Curvas','Âncora','Camadas'],mainWidths=[62,72,65,65,72],mainButtons=[];
   for(var ni=0;ni<mainNames.length;ni++){
     var nb=topNav.add('button',undefined,mainNames[ni],{name:'mk_main_'+ni});
-    nb.preferredSize=[mainWidths[ni],30];nb.minimumSize=[mainWidths[ni],30];nb.helpTip='Abrir '+mainNames[ni];mainButtons.push(nb);
+    nb.preferredSize=[mainWidths[ni],30];nb.minimumSize=[mainWidths[ni],30];nb.maximumSize=[mainWidths[ni],30];nb.helpTip='Abrir '+mainNames[ni];mainButtons.push(nb);
   }
   // Subtabs are separate controls, NOT nested tabbedpanels.
   var subNav=ui.add('group',undefined,undefined,{name:'mk_sub_navigation'});
@@ -33,13 +33,10 @@
     var sb=subNav.add('button',undefined,'',{name:'mk_sub_'+si});
     sb.preferredSize=[132,29];sb.minimumSize=[102,29];subButtons.push(sb);
   }
-  var sectionCaption=ui.add('statictext',undefined,'ANIMACOES  /  OBJETOS',{name:'mk_section_caption'});
-  sectionCaption.alignment=['fill','top'];sectionCaption.preferredSize.height=19;
-  try{sectionCaption.graphics.font=ScriptUI.newFont('Segoe UI','BOLD',10);sectionCaption.graphics.foregroundColor=sectionCaption.graphics.newPen(sectionCaption.graphics.PenType.SOLID_COLOR,orange,1);}catch(ignore){}
   // Pages all share a single, explicit content rectangle, so rows cannot overlap.
   var stage=ui.add('group',undefined,undefined,{name:'mk_content_stage'});
-  stage.orientation='stack';stage.alignChildren=['fill','top'];stage.alignment=['fill','fill'];
-  stage.margins=0;stage.spacing=0;stage.preferredSize=[364,438];stage.minimumSize=[334,418];
+  stage.orientation='stack';stage.alignChildren=['fill','fill'];stage.alignment=['fill','fill'];
+  stage.margins=0;stage.spacing=0;stage.preferredSize=[364,570];stage.minimumSize=[334,570];
   function page(name){
     var p=stage.add('group',undefined,undefined,{name:name});
     p.orientation='column';p.alignChildren=['fill','top'];p.spacing=7;p.margins=4;
@@ -49,29 +46,38 @@
   var aAnchor=page('mk_page_ancora'),aAlign=page('mk_page_alinhar');
   var aObjects=page('mk_page_objetos'),aTexts=page('mk_page_textos');
   var tCurves=page('mk_page_curvas'),aOrganize=page('mk_page_organizar'),aMover=page('mk_page_mover');
+  var home=page('mk_page_inicio');
   var mainSections=[
-    {name:'ANCORA',subs:[{label:'Ponto',page:aAnchor},{label:'Alinhar',page:aAlign}]},
+    {subs:[{label:'Início',page:home}]},
     {name:'ANIMACOES',subs:[{label:'Objetos',page:aObjects},{label:'Textos',page:aTexts}]},
     {name:'CURVAS',subs:[{label:'Curvas',page:tCurves}]},
+    {subs:[{label:'Ponto',page:aAnchor},{label:'Alinhar',page:aAlign}]},
     {name:'CAMADAS',subs:[{label:'Organizar',page:aOrganize},{label:'Mover',page:aMover}]}
   ];
-  var allPages=[aAnchor,aAlign,aObjects,aTexts,tCurves,aOrganize,aMover];
-  function repaintLayout(){try{stage.layout.layout(true);ui.layout.layout(true);}catch(ignore){}}
+  var allPages=[home,aAnchor,aAlign,aObjects,aTexts,tCurves,aOrganize,aMover];
+  var activePage;
+  function resizePage(){
+    if(!activePage)return;
+    activePage.bounds=[0,0,stage.size.width,stage.size.height];
+    activePage.layout.layout(true);
+  }
+  function repaintLayout(){ui.layout.layout(true);resizePage();}
   function selectSub(mainIndex,subIndex){
     var sec=mainSections[mainIndex],sub=sec.subs[subIndex]||sec.subs[0];
-    for(var i=0;i<allPages.length;i++)allPages[i].visible=(allPages[i]===sub.page);
-    sectionCaption.text=sec.name+'  /  '+String(sub.label).toUpperCase();
+    subNav.visible=sec.subs.length>1;
+    activePage=sub.page;
+    for(var i=0;i<allPages.length;i++)allPages[i].visible=(allPages[i]===activePage);
     for(var k=0;k<subButtons.length;k++){
       if(k<sec.subs.length){
-        subButtons[k].visible=true;subButtons[k].enabled=true;
+        subButtons[k].visible=true;subButtons[k].enabled=(k!==subIndex);
         subButtons[k].text=(k===subIndex?'• ':'')+sec.subs[k].label;
       }else{subButtons[k].visible=false;subButtons[k].enabled=false;}
     }
+    refreshSelection();
     repaintLayout();
   }
   function selectMain(mainIndex,subIndex){
-    var sec=mainSections[mainIndex];
-    for(var k=0;k<mainButtons.length;k++)mainButtons[k].text=mainNames[k];
+    for(var k=0;k<mainButtons.length;k++)mainButtons[k].enabled=(k!==mainIndex);
     for(var j=0;j<subButtons.length;j++)(function(i){subButtons[i].onClick=function(){selectSub(mainIndex,i);};})(j);
     selectSub(mainIndex,subIndex||0);
   }
@@ -83,8 +89,8 @@
   function choice(parent,items,tip){var x=parent.add('dropdownlist',undefined,items);x.selection=0;x.alignment=['fill','top'];x.preferredSize.height=26;x.helpTip=tip||'';return x;}
   function btn(parent,label,fn,tip){var x=parent.add('button',undefined,label);x.onClick=fn;x.helpTip=tip||label;x.alignment=['fill','top'];x.preferredSize.height=29;return x;}
   var status=ui.add('statictext',undefined,'Pronto - selecione uma camada.');status.alignment=['fill','bottom'];status.preferredSize.height=20;
-  var credit=ui.add('statictext',undefined,'by Edy Bastos');credit.alignment=['center','bottom'];credit.preferredSize=[120,15];
-  try{credit.graphics.foregroundColor=credit.graphics.newPen(credit.graphics.PenType.SOLID_COLOR,[.65,.65,.65,.10],1);}catch(e){}
+  var credit=ui.add('statictext',undefined,'by Edy Bastos — 11/2026');credit.alignment=['center','bottom'];credit.preferredSize=[195,17];
+  try{credit.graphics.foregroundColor=credit.graphics.newPen(credit.graphics.PenType.SOLID_COLOR,[.65,.65,.65,1],1);}catch(e){}
   function say(s){s=String(s||'');status.text=s.length>52?s.slice(0,49)+'...':s;status.helpTip=s;}
   function context(){var co=app.project.activeItem;
     if(!(co instanceof CompItem)){say('Abra uma composicao primeiro.');return null;}
@@ -119,22 +125,54 @@
   info(aAlign,'Camadas animadas sao preservadas.');
   // Animacoes: duas subabas, mesmo fluxo de categoria, pesquisa, modo, duracao e aplicar.
   function animPanel(parent,isText){
-    info(parent,isText?'Escolha um preset para o texto:':'Escolha um preset para o objeto:');
+    var feedback=info(parent,'');
     var cat=choice(parent,['Todas','Movimento','Esmaecer','Pop-up','Torcao','Bounce','Destaques'],'Filtrar a familia');
-    var search=input(parent,'',288,'Digite o nome ou uma palavra parecida');search.alignment=['fill','top'];search.preferredSize.height=26;
-    var list=parent.add('listbox',undefined,[],{name:isText?'mk_text_presets':'mk_object_presets'});list.alignment=['fill','top'];list.preferredSize.height=138;
+    var filterRow=grp(parent);filterRow.add('statictext',undefined,'Buscar');var search=input(filterRow,'',190,'Digite o nome ou uma palavra parecida');
+    btn(filterRow,'Buscar',function(){fillList(state);},'Buscar presets');
+    var tiles=[];
+    for(var row=0;row<3;row++){
+      var gridRow=grp(parent);
+      for(var col=0;col<2;col++)(function(index){
+        var tile=btn(gridRow,'',function(){state.selected=state.offset+index;refreshTiles(state);});
+        tile.preferredSize=[168,28];tile.minimumSize=[168,28];tile.maximumSize=[168,28];tiles.push(tile);
+      })(tiles.length);
+    }
+    var paging=grp(parent);
+    var previous=btn(paging,'‹',function(){state.offset-=tiles.length;refreshTiles(state);});
+    var pageNumber=info(paging,'');
+    var next=btn(paging,'›',function(){state.offset+=tiles.length;refreshTiles(state);});
+    var preview=parent.add('panel',undefined,'Prévia do movimento');
+    preview.preferredSize=[340,90];
+    preview.onDraw=function(){
+      try{
+        var p=chosen(state);if(!p)return;
+        var frames=p.kind==='highlight'?p.frames:chosenMode(state)===1?p.exit:p.enter;
+        var t=((new Date().getTime()%2000)/2000),left=frames[0],right=frames[frames.length-1];
+        for(var i=1;i<frames.length;i++)if(t<=frames[i].t){left=frames[i-1];right=frames[i];break;}
+        var mix=right.t===left.t?0:(t-left.t)/(right.t-left.t);
+        function lerp(key){return left[key]+(right[key]-left[key])*mix;}
+        var g=this.graphics,cx=this.size.width/2+lerp('x')*50,cy=46+lerp('y')*25;
+        var scale=lerp('s'),angle=lerp('r')*Math.PI/180,pts=[];
+        var corners=[[-14,-11],[14,-11],[14,11],[-14,11],[-14,-11]];
+        for(var k=0;k<corners.length;k++){
+          var x=corners[k][0]*scale,y=corners[k][1]*scale;
+          pts.push([cx+x*Math.cos(angle)-y*Math.sin(angle),cy+x*Math.sin(angle)+y*Math.cos(angle)]);
+        }
+        shapePath(g,shapePen(g,[orange[0],orange[1],orange[2],Math.max(0,Math.min(1,lerp('o')))],3),pts);
+      }catch(ignore){}
+    };
     var descriptor=info(parent,'Selecione um preset.');
     var modeRow=grp(parent);var radios=[];
-    var modeNames=['Entrada','Saida','Ambos'];
+    var modeNames=['Entrada','Saída','Ambos'];
     for(var i=0;i<3;i++)(function(idx){var r=modeRow.add('radiobutton',undefined,modeNames[idx]);r.helpTip='Aplicar: '+modeNames[idx];r.preferredSize.width=91;radios.push(r);})(i);
     radios[0].value=true;
+    var timing=info(parent,'');
     var controls=grp(parent);controls.add('statictext',undefined,'Tempo (s)');var dur=input(controls,'0,65',56,'Duracao da animacao');
-    controls.add('statictext',undefined,'Forca');var strength=input(controls,'100',48,'Forca em porcentagem');
+    controls.add('statictext',undefined,'Força (%)');var strength=input(controls,'100',48,'Forca em porcentagem');
     var apply=btn(parent,isText?'Aplicar no texto':'Aplicar no objeto',function(){applySelected(state);},'Aplicar o preset nas camadas selecionadas');
-    var state={text:isText,cat:cat,search:search,list:list,desc:descriptor,radios:radios,dur:dur,strength:strength,apply:apply,visible:[]};
+    var state={text:isText,preview:preview,feedback:feedback,cat:cat,search:search,tiles:tiles,previous:previous,next:next,pageNumber:pageNumber,selected:0,offset:0,desc:descriptor,timing:timing,radios:radios,dur:dur,strength:strength,apply:apply,visible:[]};
     search.onChanging=function(){fillList(state);};search.onChange=function(){fillList(state);};cat.onChange=function(){fillList(state);};
-    list.onChange=function(){describe(state);};
-    for(var k=0;k<radios.length;k++)(function(idx){radios[idx].onClick=function(){for(var j=0;j<radios.length;j++)radios[j].value=(j===idx);};})(k);
+    for(var k=0;k<radios.length;k++)(function(idx){radios[idx].onClick=function(){for(var j=0;j<radios.length;j++)radios[j].value=(j===idx);describe(state);};})(k);
     return state;
   }
   var objState=animPanel(aObjects,false),textState=animPanel(aTexts,true);
@@ -149,10 +187,17 @@
     {name:'Agil',values:[60,0,20,2.2]}
   ];
   var curveValues=[50,0,50,0];
-  var curveChoice=choice(tCurves,['Linear','Saida suave','Entrada suave','Suave nos dois lados','Cinematica','Agil'],'Escolher curva');curveChoice.selection=3;
-  btn(tCurves,'Carregar curva',function(){var c=curvePresets[curveChoice.selection?curveChoice.selection.index:3];setCurve(c.values,c.name);});
-  var graphRow=grp(tCurves,true);var curveGraph=graphRow.add('panel',undefined,'');curveGraph.preferredSize=[198,78];
-  curveGraph.onDraw=function(){try{var g=this.graphics,grey=shapePen(g,faint,1),or=shapePen(g,orange,2),x=10,y=8,w=174,h=55;
+  var curveLabels=['↗ Linear','⌜ Saída suave','⌟ Entrada suave','∿ Suave','∿ Cinemática','↗ Ágil'];
+  for(var cr=0;cr<3;cr++){
+    var curveTiles=grp(tCurves);
+    for(var cc=0;cc<2;cc++)(function(index){
+      var preset=curvePresets[index];
+      var tile=btn(curveTiles,curveLabels[index],function(){setCurve(preset.values,preset.name);},preset.name);
+      tile.preferredSize=[168,27];tile.minimumSize=[168,27];tile.maximumSize=[168,27];
+    })(cr*2+cc);
+  }
+  var graphRow=grp(tCurves,true);var curveGraph=graphRow.add('panel',undefined,'');curveGraph.preferredSize=[198,66];
+  curveGraph.onDraw=function(){try{var g=this.graphics,grey=shapePen(g,faint,1),or=shapePen(g,orange,2),x=10,y=8,w=174,h=47;
     shapeLine(g,grey,x,y,x,y+h);shapeLine(g,grey,x,y+h,x+w,y+h);
     var v=(fieldOutInf&&fieldOutVel&&fieldInInf&&fieldInVel)?(currentCurveFields(false)||curveValues):curveValues;
     var x1=v[0]/100,y1=x1*v[1],x2=1-v[2]/100,y2=1-(1-x2)*v[3],pts=[];
@@ -161,9 +206,9 @@
   }catch(e){}};
   var rowOut=grp(tCurves);rowOut.add('statictext',undefined,'Saida');var fieldOutInf=input(rowOut,'50',69,'Influencia saida'),fieldOutVel=input(rowOut,'0',69,'Velocidade saida');
   var rowIn=grp(tCurves);rowIn.add('statictext',undefined,'Entrada');var fieldInInf=input(rowIn,'50',69,'Influencia entrada'),fieldInVel=input(rowIn,'0',69,'Velocidade entrada');
-  info(tCurves,'Influencias / velocidades');
+
   var curveSide=choice(tCurves,['Ambos','Entrada','Saida']);
-  var curveRow=grp(tCurves);btn(curveRow,'Aplicar',applyCurve);btn(curveRow,'Ler chaves',readCurve);
+  var curveRow=grp(tCurves);btn(curveRow,'Aplicar',applyCurve);btn(curveRow,'Copiar curva',readCurve,'Selecione dois quadros-chave consecutivos');
   var curveName=input(tCurves,'Minha curva',220,'Nome da curva');
   var curveSelect=choice(tCurves,['CURVAS SALVAS']);
   var personalCurves=[];
@@ -173,10 +218,28 @@
   // CAMADAS: org e movimento em subabas nativas, sem dropdown de navegacao.
   accentText(aOrganize,'Organizar camadas');info(aOrganize,'Renomear camadas selecionadas');
   var renRow=grp(aOrganize),prefix=input(renRow,'VIDEO_',130,'Prefixo para renomeacao');btn(renRow,'Renomear',rename);
-  info(aOrganize,'Distribuir inicio das camadas');var stRow=grp(aOrganize),step=input(stRow,'0,12',125,'Intervalo em segundos');btn(stRow,'Escalonar',stagger);
+    info(aOrganize,'Escalonar camadas · intervalo em segundos');
+  var stRow=grp(aOrganize),step=input(stRow,'0,12',72,'Intervalo em segundos');
+  var direction=choice(stRow,['↓ De cima para baixo','↑ De baixo para cima'],'Ordem na pilha da timeline');
+  btn(aOrganize,'Escalonar',stagger);
   accentText(aMover,'Mover sem alterar keyframes');info(aMover,'Cria um nulo de controle para a camada.');
   btn(aMover,'Criar controlador nulo',makeMotionController,'Cria controlador, mantendo a animacao original');
   info(aMover,'Depois mova o nulo na composicao.');
+  btn(aOrganize,'Duplicar composição e precomps',duplicateComposition);
+  info(aOrganize,'Cria uma versão com precomps independentes.');
+  var homeActions=[
+    ['Animar objetos','Entradas, saídas e destaques de camadas.',1,0],
+    ['Animar textos','Movimento com animadores de texto.',1,1],
+    ['Suavizar quadros-chave','Ler, aplicar e salvar curvas de movimento.',2,0],
+    ['Ajustar âncora e alinhamento','Mover a âncora ou alinhar na composição.',3,0],
+    ['Organizar camadas e composições','Renomear, escalonar ou duplicar composições.',4,0],
+    ['Mover animação com um nulo','Reposicionar uma camada animada.',4,1]
+  ];
+  accentText(home,'O que você quer fazer?');
+  for(var h=0;h<homeActions.length;h++)(function(action){
+    btn(home,action[0],function(){selectMain(action[2],action[3]);},action[1]);
+    info(home,action[1]);
+  })(homeActions[h]);
   // DADOS: presets proprios, criados para o MotionKit EC.
   var oldPresets=[];
   function F(t,x,y,s,r,o){return {t:t,x:x||0,y:y||0,s:(s===undefined?1:s),r:r||0,o:(o===undefined?1:o)};}
@@ -287,20 +350,37 @@
     for(var i=0;i<words.length;i++)if(words[i]){var m=matchTerm(words[i],p);if(m===99)return 99;total+=m;}
     return total;
   }
-  function chosen(st){var i=st.list.selection?st.list.selection.index:-1;return i>=0&&i<st.visible.length?mkPresets[st.visible[i]]:null;}
+  function chosen(st){var i=st.selected;return i>=0&&i<st.visible.length?mkPresets[st.visible[i]]:null;}
   function fillList(st){var type=st.cat.selection?st.cat.selection.text:'Todas',terms=st.search.text,items=[];
     for(var i=0;i<mkPresets.length;i++){var p=mkPresets[i];if(type!=='Todas'&&type!==p.category)continue;
       var s=score(terms,p);if(s<99)items.push({idx:i,score:s});}
     items.sort(function(a,b){return a.score-b.score||a.idx-b.idx;});
-    st.list.removeAll();st.visible=[];
-    for(var j=0;j<items.length;j++){var p2=mkPresets[items[j].idx];st.visible.push(items[j].idx);st.list.add('item',p2.name);}
-    if(st.visible.length)st.list.selection=0;
+    st.visible=[];st.offset=0;st.selected=0;
+    for(var j=0;j<items.length;j++){st.visible.push(items[j].idx);}
+    refreshTiles(st);
+  }
+  function refreshTiles(st){
+    var icons={'Movimento':'↗','Esmaecer':'◐','Pop-up':'↑','Torcao':'↻','Bounce':'↕','Destaques':'✦'};
+    var count=st.tiles.length;
+    if(st.selected<st.offset||st.selected>=st.offset+count)st.selected=st.offset;
+    for(var i=0;i<count;i++){
+      var index=st.offset+i,p=mkPresets[st.visible[index]],tile=st.tiles[i];
+      tile.text=p?(index===st.selected?'✓ ':'')+icons[p.category]+' '+p.name:'';
+      tile.helpTip=p?p.category+' — '+p.desc:'';
+      tile.enabled=!!p;
+    }
+    st.previous.enabled=st.offset>0;
+    st.next.enabled=st.offset+count<st.visible.length;
+    st.pageNumber.text=st.visible.length?(1+st.offset/count)+' / '+Math.ceil(st.visible.length/count):'0 / 0';
     describe(st);
   }
   function describe(st){var p=chosen(st),hi=p&&p.kind==='highlight';
     st.desc.text=p?(p.desc.length>43?p.desc.slice(0,40)+'...':p.desc):'Nenhum resultado.';
     st.desc.helpTip=p?p.desc:'Digite outra palavra.';
     for(var i=0;i<st.radios.length;i++)st.radios[i].enabled=!hi;
+    var mode=chosenMode(st);
+    st.timing.text=!p?'':hi?'Destaque: a partir do cursor':mode===0?'Entrada: início da camada':mode===1?'Saída: fim da camada':'Entrada e saída: limites da camada';
+    st.apply.enabled=!!p;
     st.apply.text=hi?'Aplicar destaque':(st.text?'Aplicar no texto':'Aplicar no objeto');
   }
   function chosenMode(st){for(var i=0;i<st.radios.length;i++)if(st.radios[i].value)return i;return 0;}
@@ -316,15 +396,21 @@
     if(f.r&&found.indexOf('rotation')<0)found.push('rotation');
     if(f.o!==1&&found.indexOf('opacity')<0)found.push('opacity');
   }return found;}
+  function animationSegments(layer,p,mode,co,dur){
+    if(p.kind==='highlight')return [{begin:co.time,frames:p.frames,dir:'hl'}];
+    var segments=[];
+    if(mode!==1)segments.push({begin:Math.max(0,layer.inPoint),frames:p.enter,dir:'in'});
+    if(mode!==0)segments.push({begin:Math.min(co.duration,layer.outPoint)-dur,frames:p.exit,dir:'out'});
+    return segments;
+  }
+  function previewAt(co,begin){
+    // Scrub only after applying, outside the animation undo group.
+    if(begin!==null)co.time=begin;
+  }
   function plans(layer,p,mode,co,dur){var out=[],eps=(co.frameDuration||1/30)*.2;
     if(layer.locked)return {error:'Camada bloqueada'};
     if(layer.threeDLayer)return {error:'Suporte apenas 2D'};
-    var seq=[];
-    if(p.kind==='highlight')seq.push({begin:co.time,frames:p.frames});
-    else{
-      if(mode===0||mode===2)seq.push({begin:layer.inPoint,frames:p.enter});
-      if(mode===1||mode===2)seq.push({begin:layer.outPoint-dur,frames:p.exit});
-    }
+    var seq=animationSegments(layer,p,mode,co,dur);
     if(seq.length===2&&seq[0].begin+dur>=seq[1].begin-eps)return {error:'Entrada e saida se sobrepoem; reduza a duracao'};
     for(var s=0;s<seq.length;s++){
       var q=seq[s],end=q.begin+dur,cs=channelsOf(q.frames),props={},baseline={};
@@ -351,6 +437,7 @@
         else if(ch==='scale')v=[base[0]*(1+(f.s-1)*force),base[1]*(1+(f.s-1)*force)];
         else if(ch==='rotation')v=base+f.r*force;
         else v=Math.max(0,Math.min(100,base*(1+(f.o-1)*force)));
+        if((ch==='position'||ch==='scale')&&base.length>2)v.push(base[2]);
         p.setValueAtTime(at,v);ts.push(at);
       }
       soften(p,ts);
@@ -364,63 +451,72 @@
     }catch(e){}
   }
   function applyObjects(st,p,dur,force){var co=context();if(!co)return;
-    var done=0,skips=[],items=co.selectedLayers,mode=chosenMode(st);
+    var done=0,first=null,skips=[],items=co.selectedLayers,mode=chosenMode(st);
     // Pre-valida todas as camadas; nenhuma sobrescrita silenciosa.
     var queue=[];for(var i=0;i<items.length;i++){var plan=plans(items[i],p,mode,co,dur);
       if(plan.error)skips.push(items[i].name+': '+plan.error);else queue.push(plan.jobs);
     }
     if(!queue.length){say('Nao aplicado: '+(skips.length?skips[0]:'Nenhuma camada valida'));return;}
     app.beginUndoGroup('MotionKit - '+p.name);
-    try{for(var a=0;a<queue.length;a++)try{for(var k=0;k<queue[a].length;k++)writeFrames(queue[a][k],force,co);done++;}catch(ex){skips.push('Erro: '+ex.message);}}
+    try{for(var a=0;a<queue.length;a++)try{for(var k=0;k<queue[a].length;k++)writeFrames(queue[a][k],force,co);done++;if(first===null||queue[a][0].begin<first)first=queue[a][0].begin;}catch(ex){skips.push('Erro: '+ex.message);}}
     finally{app.endUndoGroup();}
+    previewAt(co,first);
+    if(done)appliedFeedback(st,done,skips.length);
     say(done+' camada(s) animada(s). '+(skips.length?skips.length+' ignorada(s): '+skips[0]:''));
   }
   function textGroup(layer){try{var t=layer.property('ADBE Text Properties');if(!t)return null;return t.property('ADBE Text Animators');}catch(e){return null;}}
   function findP(x,keys){for(var i=0;i<keys.length;i++){try{var p=x.property(keys[i]);if(p)return p;}catch(e){}}
     return null;}
-  function setTextEffect(animator,p,force,dir){var props=findP(animator,['ADBE Text Animator Properties']);if(!props)throw new Error('Propriedades de texto indisponiveis');
-    var fs=dir==='out'?p.exit:p.enter,f=dir==='out'?fs[fs.length-1]:fs[0],ch=channelsOf(fs),any=0;
-    for(var i=0;i<ch.length;i++){
-      var name=ch[i],match=name==='position'?'ADBE Text Position':name==='opacity'?'ADBE Text Opacity':name==='scale'?'ADBE Text Scale':'ADBE Text Rotation';
-      var v=name==='position'?[f.x*55*force,f.y*55*force]:name==='opacity'?0:name==='scale'?[100*(1+(f.s-1)*force),100*(1+(f.s-1)*force)]:f.r*force;
-      try{var pr=props.addProperty(match);if(pr){pr.setValue(v);any++;}}catch(e){throw new Error('Animador nao aceita '+name+': '+e.message);}
+  function textValue(channel,f,force){
+    var scale=100*(1+(f.s-1)*force);
+    if(channel==='position')return [f.x*55*force,f.y*55*force,0];
+    if(channel==='scale')return [scale,scale,100];
+    if(channel==='rotation')return f.r*force;
+    return Math.max(0,Math.min(100,100*(1+(f.o-1)*force)));
+  }
+  function setTextEffect(animator,frames,force,begin,dur,isHighlight){
+    var matches={position:'ADBE Text Position 3D',scale:'ADBE Text Scale 3D',
+      rotation:'ADBE Text Rotation',opacity:'ADBE Text Opacity'};
+    var channels=channelsOf(frames);
+    for(var i=0;i<channels.length;i++){
+      var channel=channels[i];
+      var prop=animator.property('ADBE Text Animator Properties').addProperty(matches[channel]);
+      if(!prop)throw new Error('Animador nao aceita '+channel);
+      if(isHighlight){
+        for(var j=0;j<frames.length;j++){
+          var f=frames[j];
+          prop.setValueAtTime(begin+f.t*dur,textValue(channel,f,force));
+        }
+      }else prop.setValue(textValue(channel,frames[0],force));
     }
-    if(!any){var opa=props.addProperty('ADBE Text Opacity');opa.setValue(0);}
   }
-  function setTextKeys(selector,begin,dur,direction,layerStart){var start=findP(selector,['start','ADBE Text Percent Start']);if(!start)throw new Error('Seletor Inicio nao encontrado');
+  function setTextKeys(selector,begin,dur,direction,layerStart){var start=findP(selector,['ADBE Text Percent Start','start']);if(!start)throw new Error('Seletor Inicio nao encontrado');
     if(direction==='in'){start.setValueAtTime(begin,0);start.setValueAtTime(begin+dur,100);}
-    else{start.setValueAtTime(layerStart,100);start.setValueAtTime(begin,100);start.setValueAtTime(begin+dur,0);}
-  }
-  function textHighlight(animator,p,begin,dur,force){var props=findP(animator,['ADBE Text Animator Properties']);if(!props)throw new Error('Animador incompleto');
-    // Destaques sao aplicados a letras por animador de escala/posicao, sem alterar Transform da camada.
-    var sc=props.addProperty('ADBE Text Scale'),ps=props.addProperty('ADBE Text Position');
-    if(!sc||!ps)throw new Error('Escala/Posicao de texto indisponivel');
-    for(var j=0;j<p.frames.length;j++){var f=p.frames[j],t=begin+f.t*dur;sc.setValueAtTime(t,[100*(1+(f.s-1)*force),100*(1+(f.s-1)*force)]);
-      ps.setValueAtTime(t,[f.x*36*force,f.y*36*force]);}
+    else{if(layerStart<begin)start.setValueAtTime(layerStart,100);start.setValueAtTime(begin,100);start.setValueAtTime(begin+dur,0);}
   }
   function applyText(st,p,dur,force){var co=context();if(!co)return;
-    var selected=co.selectedLayers,mode=chosenMode(st),good=0,skips=[];
+    var selected=co.selectedLayers,mode=chosenMode(st),good=0,first=null,skips=[];
     var queue=[];for(var i=0;i<selected.length;i++){
       var layer=selected[i],g=textGroup(layer),segments=[];
       if(layer.locked||!g){skips.push(layer.name+': selecione uma camada de texto desbloqueada');continue;}
-      if(p.kind==='highlight')segments.push({begin:co.time,dir:'hl'});
-      else{
-        if(mode===0||mode===2)segments.push({begin:layer.inPoint,dir:'in'});
-        if(mode===1||mode===2)segments.push({begin:layer.outPoint-dur,dir:'out'});
+      segments=animationSegments(layer,p,mode,co,dur);
+      var bad='';for(var j=0;j<segments.length;j++){
+        var begin=segments[j].begin;
+        if(begin<Math.max(0,layer.inPoint)||begin+dur>Math.min(co.duration,layer.outPoint)+.0001)bad='Duracao fora do intervalo da camada';
       }
-      var bad='';for(var j=0;j<segments.length;j++)if(segments[j].begin<layer.inPoint||segments[j].begin+dur>layer.outPoint+0.0001)bad='Duracao fora do intervalo da camada';
       if(segments.length===2&&segments[0].begin+dur>=segments[1].begin-0.001)bad='Entrada/saida se sobrepoem';
       if(bad)skips.push(layer.name+': '+bad);else queue.push({layer:layer,g:g,segments:segments});
     }
     if(!queue.length){say('Texto nao animado: '+(skips[0]||'sem camadas'));return;}
     app.beginUndoGroup('MotionKit - texto - '+p.name);
     try{for(var k=0;k<queue.length;k++)try{
-      var q=queue[k];for(var z=0;z<q.segments.length;z++){
+      var q=queue[k],initialCount=q.g.numProperties;
+      for(var z=0;z<q.segments.length;z++){
         var s=q.segments[z],anim=q.g.addProperty('ADBE Text Animator');
         if(!anim)throw new Error('Criacao do animador falhou');anim.name='MK '+p.name+' '+s.dir;
-        if(s.dir==='hl')textHighlight(anim,p,s.begin,dur,force);
-        else{
-          setTextEffect(anim,p,force,s.dir);
+        var frames=s.dir==='hl'?p.frames:s.dir==='in'?p.enter:[p.exit[p.exit.length-1]];
+        setTextEffect(anim,frames,force,s.begin,dur,s.dir==='hl');
+        if(s.dir!=='hl'){
           var selectors=findP(anim,['ADBE Text Selectors']);
           if(!selectors)throw new Error('Seletores de texto indisponiveis');
           // EffectCraft ja cria um selector padrao: nunca adicionar outro.
@@ -428,11 +524,17 @@
           setTextKeys(selector,s.begin,dur,s.dir,q.layer.inPoint);
         }
       }good++;
-      }catch(err){skips.push('Falha na camada de texto: '+err.message);}
+      if(first===null||q.segments[0].begin<first)first=q.segments[0].begin;
+      }catch(err){
+        for(var a=q.g.numProperties;a>initialCount;a--)q.g.property(a).remove();
+        skips.push('Falha na camada de texto: '+err.message);
+      }
     }finally{app.endUndoGroup();}
+    previewAt(co,first);
+    if(good)appliedFeedback(st,good,skips.length);
     say(good+' texto(s) animado(s). '+(skips.length?skips[0]:''));
   }
-  function applySelected(st){var p=chosen(st);if(!p){say('Escolha um preset na lista');return;}
+  function applySelected(st){updateSelection(st,true);var p=chosen(st);if(!p){say('Escolha um preset na lista');return;}
     var dur=num(st.dur.text,.12,8),force=num(st.strength.text,10,200);
     if(dur===null||force===null){say('Duracao 0,12 a 8s; forca 10 a 200%');return;}
     if(st.text)applyText(st,p,dur,force/100);else applyObjects(st,p,dur,force/100);
@@ -456,15 +558,51 @@
     }finally{app.endUndoGroup();}
     say('Alinhadas: '+done+' / '+co.selectedLayers.length+(skip.length?' | ignoradas: '+skip.length:''));
   }
+  function duplicateComposition(){
+    var comp=app.project.activeItem;
+    if(!(comp instanceof CompItem)){say('Abra a composição que deseja duplicar.');return;}
+    var copies={},created=[],result;
+    function copyTree(source){
+      if(copies[source.id])return copies[source.id];
+      var copy=source.duplicate();
+      if(!copy)throw new Error('Falha ao duplicar '+source.name);
+      copies[source.id]=copy;
+      created.push(copy);
+      for(var i=1;i<=copy.numLayers;i++){
+        var layer=copy.layer(i),nested=layer.source;
+        if(!(nested instanceof CompItem))continue;
+        var replacement=copyTree(nested),locked=layer.locked;
+        try{if(locked)layer.locked=false;layer.replaceSource(replacement,false);}
+        finally{if(locked)layer.locked=true;}
+      }
+      return copy;
+    }
+    app.beginUndoGroup('MotionKit - Duplicar composição');
+    try{result=copyTree(comp);}
+    catch(error){
+      for(var i=0;i<created.length;i++)created[i].remove();
+      say('Falha ao duplicar: '+error.message);
+    }finally{app.endUndoGroup();}
+    if(result){result.openInViewer();say(created.length+' composição(ões) duplicada(s).');}
+  }
   function rename(){var co=context();if(!co)return;var prefixValue=prefix.text;if(!prefixValue||prefixValue.length>40){say('Prefixo invalido');return;}
     var done=0;app.beginUndoGroup('MotionKit - renomear');try{for(var i=0;i<co.selectedLayers.length;i++){var la=co.selectedLayers[i];
       if(!la.locked&&la.name.indexOf(prefixValue)!==0){la.name=prefixValue+la.name;done++;}}
     }finally{app.endUndoGroup();}say(done+' camada(s) renomeada(s).');
   }
   function stagger(){var co=context();if(!co)return;var dt=num(step.text,0,20);if(dt===null){say('Intervalo invalido');return;}
-    var done=0;app.beginUndoGroup('MotionKit - escalonar');try{for(var i=0;i<co.selectedLayers.length;i++){
-      var la=co.selectedLayers[i];if(!la.locked){la.startTime=la.startTime+i*dt;done++;}}
-    }finally{app.endUndoGroup();}say(done+' camada(s) escalonada(s).');
+    var layers=[],selected=co.selectedLayers;
+    for(var j=0;j<selected.length;j++)if(!selected[j].locked)layers.push(selected[j]);
+    if(layers.length<2){say('Selecione duas camadas desbloqueadas.');return;}
+    layers.sort(function(a,b){return a.index-b.index;});
+    if(direction.selection&&direction.selection.index===1)layers.reverse();
+    var start=layers[0].inPoint,done=0;
+    app.beginUndoGroup('MotionKit - escalonar');
+    try{for(var i=0;i<layers.length;i++){
+      var la=layers[i],target=start+i*dt;
+      if(target<co.duration){la.startTime+=target-la.inPoint;done++;}
+    }
+    }finally{app.endUndoGroup();}say(done+' escalonada(s); '+(layers.length-done)+' fora da composição.');
   }
   function makeMotionController(){var co=context();if(!co)return;
     if(co.selectedLayers.length!==1){say('Selecione uma unica camada');return;}
@@ -586,19 +724,18 @@
       for(var j=0;j<keys.length;j++){
         var k=keys[j];
         try{
-          if(k<=1||k>=p.numKeys)continue;
-          var a=p.keyOutTemporalEase(k),b=p.keyInTemporalEase(k);
-          // Lemos os dois lados do mesmo quadro-chave (ambos precisam existir).
+          if(j+1>=keys.length||keys[j+1]!==k+1)continue;
+          var a=p.keyOutTemporalEase(k),b=p.keyInTemporalEase(k+1);
           if(!a||!b||!a.length||!b.length)continue;
           var vOut=speedOfSegment(p,k,k+1,0,a.length===1);
-          var vIn=speedOfSegment(p,k-1,k,0,b.length===1);
+          var vIn=speedOfSegment(p,k,k+1,0,b.length===1);
           if(vOut===null||vIn===null)continue;
           setCurve([a[0].influence,vOut>0?a[0].speed/vOut:0,b[0].influence,vIn>0?b[0].speed/vIn:0],'lida dos quadros');
           return;
         }catch(ignore){}
       }
     }
-    say('Para ler, selecione uma chave entre duas outras.');
+    say('Selecione dois quadros-chave consecutivos.');
   }
   function refreshPersonalList(){
     try{
@@ -638,7 +775,48 @@
     personalCurves.splice(idx-1,1);persistCurves();refreshPersonalList();say('Excluida: '+name);
   }
 
-  fillList(objState);fillList(textState);loadCurves();selectMain(1,0);
-  ui.onResize=ui.onResizing=function(){try{this.layout.resize();}catch(ignore){}};
-  if(ui instanceof Window)ui.show();else ui.layout.layout(true);
+  function feedbackText(st,text,detail,ready){
+    st.feedback.text=text;
+    st.feedback.helpTip=detail;
+    st.feedback.graphics.foregroundColor=st.feedback.graphics.newPen(
+      st.feedback.graphics.PenType.SOLID_COLOR,ready?[.29,.68,.39,1]:orange,1);
+  }
+  function updateSelection(st,force){
+    var co=app.project.activeItem,names=[],ids=[];
+    if(co instanceof CompItem){
+      var layers=co.selectedLayers;
+      for(var i=0;i<layers.length;i++){
+        var layer=layers[i];
+        if(layer.locked||(st.text?!textGroup(layer):layer.threeDLayer))continue;
+        names.push(layer.name);ids.push(layer.id);
+      }
+    }
+    var key=JSON.stringify([co&&co.id,ids,names]);
+    if(!force&&st.selectionKey===key)return;
+    st.selectionKey=key;
+    if(!names.length){
+      feedbackText(st,st.text?'Selecione uma camada de texto':'Selecione um objeto 2D',
+        'Selecione uma camada compatível e desbloqueada na timeline.',false);
+      return;
+    }
+    var suffix=names.length===1?' selecionado':' selecionados',joined=names.join(', ');
+    var label=joined+suffix;
+    if(label.length>42)label=names.length===1?names[0].slice(0,25)+'…'+suffix:names.length+' camadas selecionadas';
+    feedbackText(st,'✓ '+label,joined+suffix,true);
+  }
+  function appliedFeedback(st,count,skipped){
+    var label='Efeito aplicado em '+count+(count===1?' camada':' camadas');
+    if(skipped)label+=' · '+skipped+' ignor.';
+    feedbackText(st,'✓ '+label,label,true);
+  }
+  function refreshSelection(){
+    if(activePage===aObjects)updateSelection(objState,false);
+    if(activePage===aTexts)updateSelection(textState,false);
+    var st=activePage===aObjects?objState:activePage===aTexts?textState:null;
+    if(st&&st.preview)st.preview.notify('onDraw');
+  }
+  fillList(objState);fillList(textState);loadCurves();selectMain(0,0);
+  app.scheduleTask(refreshSelection,80,true);
+  ui.onResize=ui.onResizing=function(){try{this.layout.resize();resizePage();}catch(ignore){}};
+  if(ui instanceof Window)ui.show();else repaintLayout();
 })(this);

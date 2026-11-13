@@ -1,58 +1,43 @@
-# MotionKit EC · v0.8.1-beta
+## EdyTools 2.0.0-beta
 
-**by Edy Bastos — 11/2026**  
-Painel independente para [EffectCraft](https://github.com/storytold/effectcraft), voltado à criação de vídeos e motion graphics. Licença MIT.
+[Baixar instalador Windows (.zip)](./downloads/EdyTools-2.0.0-beta-Windows.zip) · [Baixar script EdyTools.jsx](./EdyTools.jsx)
 
-## Correção v0.8.1 — sobreposição da interface
+A nova interface está em [EdyTools.jsx](./EdyTools.jsx). Veja as [duas opções de instalação e o guia de uso](./EDYTOOLS.md). O histórico do MotionKit EC continua abaixo.
 
-O painel **não usa mais `tabbedpanel` aninhado**. O menu principal, o menu secundário e a área de ferramentas têm alturas separadas; apenas a página escolhida fica visível. Isso evita que nomes como “Objetos”, “Textos” e “Animações de objetos” ocupem o mesmo espaço. O cabeçalho de conteúdo indica a seção atual em laranja.
+# MotionKit EC · v0.9.0-beta
 
-**Recomendação:** mantenha a coluna do painel com pelo menos **390 px de largura**. Uma área menor pode cortar os controles, porque o ScriptUI não oferece rolagem automática.
+**by Edy Bastos — 11/2026**
 
-## Novidades
+Painel para [EffectCraft](https://github.com/storytold/effectcraft) com presets de animação e ferramentas para edição de vídeo e motion graphics. Licença MIT.
 
-- **Navegação corrigida**: quatro seções (Âncora, Animações, Curvas e Camadas) com botões de subabas separados (Ponto/Alinhar, Objetos/Textos e Organizar/Mover). Sem painéis de abas aninhados, que causavam sobreposição no EffectCraft.
-- Destaques personalizados em **laranja**, mantendo as cores nativas do tema claro ou escuro.
-- **Somente os nove botões de ponto de âncora** (e o de centralização rápida) têm ícones sem texto. Os demais controles mostram nomes legíveis.
-- **Alinhamento** 3×3 diretamente na seção Âncora, sem sair do painel.
-- **Animações de objetos**: 25 famílias de Entrada/Saída/Ambos e seis destaques como Show Up, com lista, categorias e busca tolerante a pequenos erros.
-- **Animações de texto**: as mesmas famílias em uma subaba própria, com animadores de texto e seletor de intervalo (letra por letra); saídas começam sem ocultar o texto antecipadamente.
-- **Curvas**: seis opções, edição de influência/velocidade e salvamento de curvas pessoais.
-- **Camadas**: renomeação, escalonamento e controlador de movimento por objeto nulo.
-- Mensagens de erro mais específicas quando um preset não pode ser aplicado. Não substitui silenciosamente keyframes existentes.
-- Rodapé discreto "by Edy Bastos", com opacidade nominal de 10% (a implementação exata depende do suporte a alfa do ScriptUI).
+## Duas opções de instalação
 
-## Instalação com um clique (Windows)
+As duas opções instalam o mesmo painel `MotionKit EC.jsx`, com as mesmas ferramentas e o mesmo funcionamento. Escolha uma delas.
 
-1. **Feche o EffectCraft**.
-2. Extraia **todos os arquivos** do ZIP para uma mesma pasta.
-3. Dê dois cliques em **`INSTALAR.cmd`**. O script PowerShell local cria backup das versões anteriores e instala o arquivo com o nome estável `MotionKit EC.jsx`.
-4. Reabra o EffectCraft e selecione **Janela (Window) → MotionKit EC.jsx**.
+### 1. Script pelo EffectCraft
 
-O instalador usa `%APPDATA%\EffectCraft\Scripts\ScriptUI Panels`, **não** o diretório de instalação do aplicativo. Não requer privilégios de administrador, não acessa a internet nem solicita credenciais. Backups ficam em `_MotionKit_Backups` dentro da pasta de painéis.
+1. Baixe o [MotionKit EC.jsx](./MotionKit%20EC.jsx).
+2. No EffectCraft, vá a **Arquivo → Scripts → Instalar painel ScriptUI** (*File → Scripts → Install ScriptUI Panel*).
+3. Selecione o arquivo baixado e abra **Janela → MotionKit EC.jsx**. Se estiver atualizando um painel já aberto, reinicie o EffectCraft.
 
-### Instalação manual
+### 2. Instalador para Windows
 
-Copie `MotionKit EC.jsx` para `%APPDATA%\EffectCraft\Scripts\ScriptUI Panels`. Antes, renomeie a versão antiga para backup. Reinicie o EffectCraft.
+1. Baixe o repositório em **Code → Download ZIP** e extraia todos os arquivos para a mesma pasta.
+2. Feche o EffectCraft e execute `INSTALAR.cmd`.
+3. Reabra o EffectCraft e abra **Janela → MotionKit EC.jsx**.
 
-## Uso das animações
+O instalador faz backup das versões anteriores e copia o painel para `%APPDATA%\EffectCraft\Scripts\ScriptUI Panels`. Os backups ficam na subpasta `_MotionKit_Backups`. A instalação funciona offline e dispensa privilégios de administrador.
 
-1. Abra a composição e selecione uma camada 2D (ou texto, na subaba **Textos**).
-2. Vá para **Animações → Objetos** ou **Animações → Textos**.
-3. Pesquise um preset ou filtre por categoria.
-4. Escolha **Entrada**, **Saída** ou **Ambos**. Em **Destaques**, o preset é aplicado no tempo atual, sem esses modos.
-5. Ajuste a duração e a força; clique em **Aplicar**.
+## O que o painel faz
 
-Se houver chaves em propriedades de objeto dentro do intervalo, o plugin evita sobrescrevê-las e informa o motivo. Para reposicionar uma animação existente sem alterar os quadros-chave, use **Camadas → Mover → Criar controlador nulo**.
+- **Início** mostra as ferramentas e oferece acesso direto a cada uma.
+- **Animar** reúne presets de objetos 2D e textos. Selecione a camada, escolha o preset, ajuste duração e intensidade e clique em **Aplicar**. **Entrada** começa no início da camada, **Saída** termina no fim dela e **Destaque** parte da agulha. Depois de aplicar, o painel leva a agulha ao começo do trecho animado.
+- **Curvas** permite copiar a suavização de dois quadros-chave consecutivos, aplicar curvas e salvar ajustes próprios.
+- **Âncora** reúne os controles de ponto de âncora e alinhamento 3×3.
+- **Camadas** permite renomear, escalonar, criar um nulo de controle e duplicar uma composição com suas precomposições.
 
-## Testes e limitações
+## Testes e compatibilidade
 
-O arquivo passou por **16 testes simulados** (incluindo alternância das seções e subabas, exclusão de abas aninhadas, verificação das listas e aplicação de animações). O arquivo foi verificado por Node.js e testado com um simulador de ScriptUI e da API de scripts: inicialização da interface, listas, busca, animações de opacidade, criação de animadores de texto, saída que preserva a visibilidade antes de seu início, alinhamento e controlador nulo.
+A v0.9.0-beta passou por 162 aplicações de presets no motor do EffectCraft, além de testes de cópia de curva, duplicação de precomposições e instalação em pasta isolada. A aparência do painel acoplado ainda precisa de conferência visual no Windows. Para os presets de objetos, use camadas 2D. O painel preserva quadros-chave de transformação existentes no intervalo do preset.
 
-**Esses testes não verificam a geometria real desenhada pelo EffectCraft no Windows.** A validação visual final e a renderização dos presets devem ser verificadas com uma cópia do projeto dentro do EffectCraft. A compatibilidade pode variar entre versões da aplicação.
-
-Algumas propriedades animadas, expressões, camada 3D e posições separadas não são alteradas automaticamente, para evitar resultados inesperados.
-
-## Crédito e licença
-
-Criado por **Edy Bastos, novembro de 2026**. Licença MIT. Projeto não afiliado ao EffectCraft, ao Mister Horse ou ao CapCut.
+Consulte o [histórico de versões](./CHANGELOG.md) e a [licença MIT](./LICENSE).

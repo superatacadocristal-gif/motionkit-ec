@@ -1,4 +1,4 @@
-# MotionKit EC 0.8.1-beta - instalador local
+# MotionKit EC - instalador local
 # Autor: Edy Bastos, 11/2026
 # Nao requer administrador e nao acessa a internet.
 $ErrorActionPreference = 'Stop'
@@ -9,7 +9,8 @@ $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
 try {
     if (-not (Test-Path -LiteralPath $source -PathType Leaf)) { throw "Arquivo 'MotionKit EC.jsx' nao encontrado ao lado do instalador." }
     $content = Get-Content -LiteralPath $source -Raw -Encoding UTF8
-    if ($content -notmatch 'MotionKit EC 0\.8\.1-beta') { throw 'Este pacote nao contem a versao 0.8.1-beta esperada.' }
+    if ($content -notmatch '\A/\* MotionKit EC (\d+\.\d+\.\d+(?:-[a-zA-Z0-9.-]+)?)\s') { throw 'O arquivo nao tem um cabecalho de versao valido do MotionKit EC.' }
+    $version = $Matches[1]
     New-Item -ItemType Directory -Path $dest -Force | Out-Null
     New-Item -ItemType Directory -Path $backups -Force | Out-Null
     $oldFiles = @(Get-ChildItem -LiteralPath $dest -File -Filter '*.jsx' | Where-Object {
@@ -27,7 +28,7 @@ try {
     if ((Get-FileHash -LiteralPath $installed -Algorithm SHA256).Hash -ne (Get-FileHash -LiteralPath $source -Algorithm SHA256).Hash) {
         throw 'Falha na verificacao do arquivo instalado.'
     }
-    Write-Host 'MotionKit EC 0.8.1-beta instalado com sucesso!' -ForegroundColor Green
+    Write-Host ("MotionKit EC $version instalado com sucesso!") -ForegroundColor Green
     Write-Host ('Pasta: ' + $dest)
     Write-Host ('Backups: ' + $backups)
     Write-Host 'Abra o EffectCraft > Janela (Window) > MotionKit EC.jsx.'

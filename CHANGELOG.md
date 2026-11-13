@@ -1,4 +1,19 @@
+## EdyTools 2.0.0-beta
+
+- Interface reconstruída com cartões, ícones vetoriais e navegação inferior.
+- Tema escuro/laranja e claro/azul conforme o EffectCraft.
+- Prévia do cartão selecionado com pausar/reiniciar, busca e indicador de seleção.
+- Correção do callback agendado no contexto global do painel acoplado.
+- Testes no EffectCraft 0.24.1, instalador com backup e duas opções de instalação.
+
 # Histórico de alterações
+
+## v0.9.0-beta
+
+- Tela inicial com atalhos para as ferramentas.
+- Cópia de suavização de dois quadros-chave consecutivos e duplicação de composições com precomposições independentes.
+- Correções de layout, animadores de texto e posicionamento de entrada e saída na timeline.
+- Duas opções de instalação do mesmo painel, pelo EffectCraft ou pelo instalador Windows com backup.
 
 ## v0.8.1-beta — 12/11/2026
 
