@@ -1,4 +1,4 @@
-/* EdyTools 2.2.0-beta — by Edy Bastos — 11/2026
+/* EdyTools 2.3.0-beta — by Edy Bastos — 11/2026
  * MIT. Interface original e motor de ferramentas derivado do MotionKit EC.
  */
 
@@ -17,6 +17,8 @@
   var countEnd=ui.add('edittext',undefined,'1000',{name:'edy_count_end'});
   var countDuration=ui.add('edittext',undefined,'2',{name:'edy_count_duration'});
   var tab=0,textMode=false,paused=false,previewStart=Date.now(),pausedTime=0;
+  var projectMode=false,organizeRootOnly=false,projectPlan=null;
+  var projectKinds=['Composições','Imagens','Vídeos','Áudios','Sólidos','Outros'];
   var dirty=true,previewUntil=0,fontCache={},drawCount=0;
   var hits=[],hover='',themeStamp=0,selectionStamp=0,lastSelection='',message='Selecione uma camada para começar.',messageKind='hint';
   var palette,curveIndex=3,layoutMode=0,themeKey='';
@@ -116,8 +118,8 @@
     if(Date.now()-selectionStamp<500)return;selectionStamp=Date.now();
     var c=app.project.activeItem,names=[],ids=[];
     if(c instanceof CompItem)for(var i=0;i<c.selectedLayers.length;i++){var l=c.selectedLayers[i];names.push(l.name);ids.push(l.id);}
-    var key=JSON.stringify([c&&c.id,ids,names,tab,textMode]);
-    if(key!==lastSelection){dirty=true;lastSelection=key;message=names.length?names.join(', ')+' · '+(names.length===1?'selecionado':'selecionados'):'Selecione uma camada para começar.';messageKind=names.length?'success':'hint';if(tab===1&&names.length){message='Selecione quadros-chave para aplicar a curva.';messageKind='hint';}}
+    var key=JSON.stringify([c&&c.id,ids,names,tab,textMode,projectMode]);
+    if(key!==lastSelection){dirty=true;lastSelection=key;message=names.length?names.join(', ')+' · '+(names.length===1?'selecionado':'selecionados'):'Selecione uma camada para começar.';messageKind=names.length?'success':'hint';if(tab===3&&projectMode){message='Analise os itens antes de organizar.';messageKind='hint';}if(tab===1&&names.length){message='Selecione quadros-chave para aplicar a curva.';messageKind='hint';}}
   }
   function phase(){
     var d=num(duration.text,.12,8)||.65;
@@ -295,6 +297,7 @@
     label(g,'Reposicione uma camada animada pelo nulo.',16,573,11,palette.muted,false,w-32);
   }
   function drawLayers(g,w){
+    if(projectMode){drawProject(g,w);return;}
     label(g,'Organize sua timeline',16,84,18,palette.text,true);
     label(g,'Escalonar camadas',16,126,13,palette.text,true);
     var cw=(w-40)/2;
@@ -310,6 +313,67 @@
     button(g,'rename','Renomear com prefixo','text',16,429,w-32,42,function(){editValue(prefix,'Prefixo das camadas');rename();});
     button(g,'duplicate','Duplicar composição e precomps','copy',16,483,w-32,42,duplicateComposition);
     button(g,'null','Criar controlador nulo','anchor',16,537,w-32,42,makeMotionController);
+    button(g,'project','Organizar projeto','layers',16,591,w-32,36,function(){projectMode=true;projectPlan=null;layout();});
+  }
+  function projectCategory(item){
+    if(item instanceof CompItem)return 0;
+    if(!(item instanceof FootageItem))return 5;
+    var source=item.mainSource;
+    if(source&&String(source)==='[object SolidSource]')return 4;
+    if(source&&source.isStill)return 1;
+    if(item.hasVideo)return 2;
+    if(item.hasAudio)return 3;
+    return 5;
+  }
+  function scanProject(){
+    var plan={items:[],counts:[0,0,0,0,0,0]},project=app.project;
+    for(var i=1;i<=project.numItems;i++){
+      var item=project.item(i);if(item instanceof FolderItem)continue;
+      if(organizeRootOnly&&item.parentFolder.id!==project.rootFolder.id)continue;
+      var kind=projectCategory(item);plan.items.push({item:item,kind:kind});plan.counts[kind]++;
+    }
+    return plan;
+  }
+  function projectFolder(name,parent,created){
+    for(var i=1;i<=app.project.numItems;i++){
+      var f=app.project.item(i);if(f instanceof FolderItem&&f.name===name&&f.parentFolder.id===parent.id)return f;
+    }
+    var folder=app.project.items.addFolder(name);created.push(folder);folder.parentFolder=parent;return folder;
+  }
+  function organizeProject(){
+    var plan=scanProject(),created=[],moved=[],folders=[],done=0;
+    if(!plan.items.length){projectPlan=plan;say('Nenhum item para organizar neste escopo.');return;}
+    app.beginUndoGroup('EdyTools - organizar projeto');
+    try{
+      var root=projectFolder('EdyTools - Projeto',app.project.rootFolder,created);
+      for(var k=0;k<projectKinds.length;k++)if(plan.counts[k])folders[k]=projectFolder('0'+(k+1)+' - '+projectKinds[k],root,created);
+      for(var i=0;i<plan.items.length;i++){
+        var entry=plan.items[i],previous=entry.item.parentFolder;
+        if(previous.id===folders[entry.kind].id)continue;
+        moved.push({item:entry.item,parent:previous});entry.item.parentFolder=folders[entry.kind];done++;
+      }
+      projectPlan=scanProject();say(done?done+' itens organizados · Ctrl+Z desfaz':'Projeto já organizado.');
+    }catch(error){
+      var rollbackError=false;
+      for(var j=moved.length-1;j>=0;j--)try{moved[j].item.parentFolder=moved[j].parent;}catch(ignore){rollbackError=true;}
+      for(var n=created.length-1;n>=0;n--)try{if(!created[n].numItems)created[n].remove();}catch(ignore){rollbackError=true;}
+      projectPlan=null;say('Falha: '+error.message+(rollbackError?' · use Ctrl+Z para reverter.':''));
+    }finally{app.endUndoGroup();}
+  }
+  function drawProject(g,w){
+    button(g,'project_back','Camadas','left',16,70,w-32,28,function(){projectMode=false;layout();});
+    label(g,'Organizar projeto',16,112,18,palette.text,true);
+    var cw=(w-40)/2;
+    button(g,'scope_all','Todo o projeto',null,16,146,cw,30,function(){organizeRootOnly=false;projectPlan=null;dirty=true;},!organizeRootOnly);
+    button(g,'scope_root','Só na raiz',null,24+cw,146,cw,30,function(){organizeRootOnly=true;projectPlan=null;dirty=true;},organizeRootOnly);
+    for(var i=0;i<projectKinds.length;i++){
+      var y=192+i*28;label(g,projectKinds[i],24,y,12,palette.text);
+      label(g,projectPlan?projectPlan.counts[i]:'—',w-55,y,12,palette.accent,true,40);
+    }
+    label(g,'Destino: EdyTools - Projeto',16,368,11,palette.muted,false,w-32);
+    label(g,'Move itens no painel, sem mover arquivos.',16,387,10,palette.muted,false,w-32);
+    button(g,'project_scan','Analisar',null,16,418,cw,34,function(){projectPlan=scanProject();dirty=true;});
+    button(g,'project_apply','Organizar','layers',24+cw,418,cw,34,organizeProject,false,true);
   }
   function draw(){
     drawCount++;theme();var g=canvas.graphics,w=canvas.size.width,h=canvas.size.height;hits=[];
@@ -335,7 +399,7 @@
   }
   function layout(){
     dirty=true;
-    var w=Math.max(280,(ui.size.width||320)-12),h=Math.max(tab===0?560:720,(ui.size.height||600)-12);
+    var w=Math.max(280,(ui.size.width||320)-12),h=Math.max(tab===0||(tab===3&&projectMode)?560:720,(ui.size.height||600)-12);
     canvas.bounds=[0,0,w,h];
     search.visible=duration.visible=strength.visible=category.visible=tab===0&&!countMode;
     countStart.visible=countEnd.visible=countDuration.visible=tab===0&&countMode;

@@ -1,3 +1,9 @@
+## EdyTools 2.3.0-beta
+
+- Organizador de projeto em Camadas: pastas por tipo, análise de quantidades e escopo inteiro/raiz.
+- Reutiliza pastas, preserva arquivos e referências, mantém pastas vazias existentes e permite desfazer.
+- Análise sob demanda, interface compacta e 583 verificações automatizadas.
+
 ## EdyTools 2.2.0-beta
 
 - Animar e Contador compactos: área mínima de 280 × 560 pixels.
