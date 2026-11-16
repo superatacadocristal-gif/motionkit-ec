@@ -1,3 +1,11 @@
+## EdyTools 2.2.0-beta
+
+- Animar e Contador compactos: área mínima de 280 × 560 pixels.
+- Subabas Entrada, Saída, Ambos e Destaques filtram a biblioteca e definem o modo de aplicação.
+- Prévias sob demanda de três segundos, somente no preset selecionado.
+- Sem redesenho periódico em repouso; hover invalida apenas ao mudar de alvo; fontes reutilizadas e menos segmentos de desenho.
+- 567 verificações automatizadas e conferência visual no programa.
+
 ## EdyTools 2.1.0-beta
 
 - Deslizar e Quicar agrupados com setas de direção coerentes na entrada/saída e nas prévias.

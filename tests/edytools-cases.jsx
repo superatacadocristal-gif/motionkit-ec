@@ -26,7 +26,7 @@
       }
     }
   }
-  textMode=false;fillList(objState);search.text='sacudir';fillList(objState);check(chosen(objState).name==='Sacudir','Busca');
+  textMode=false;objState.section=3;fillList(objState);search.text='sacudir';fillList(objState);check(chosen(objState).name==='Sacudir','Busca');
   search.text='zzzzzzzzzzzz';fillList(objState);check(objState.visible.length===0,'Busca vazia');
   search.text='';fillList(objState);
   var lower=co.layers.addText('Inferior'),upper=co.layers.addText('Superior');
@@ -75,7 +75,21 @@
   }
   animateMode(2);switchTab(0);draw();check(countStart.visible&&!search.visible,'Campos contador');
   ui.size=[300,720];layout();draw();
-  for(var hi=0;hi<hits.length;hi++)if(hits[hi].id==='apply_counter')check(hits[hi].y+hits[hi].h<canvas.size.height-115,'Sem sobreposicao contador');
+  for(var hi=0;hi<hits.length;hi++)if(hits[hi].id==='apply_counter')check(hits[hi].y+hits[hi].h<canvas.size.height-80,'Sem sobreposicao contador');
   animateMode(0);check(!countStart.visible&&search.visible,'Voltar animacoes');
+  search.text='';
+  for(var sec=0;sec<4;sec++){
+    setSection(objState,sec);check(objState.visible.length>0,'Subaba preenchida '+sec);
+    for(var vi=0;vi<objState.visible.length;vi++)check((mkPresets[objState.visible[vi]].kind==='highlight')===(sec===3),'Filtro subaba');
+    check(chosenMode(objState)===(sec===3?0:sec),'Modo da subaba');
+  }
+  ui.size=[292,572];animateMode(0);setSection(objState,0);layout();draw();
+  check(canvas.size.height===560,'Altura compacta');
+  for(var ht=0;ht<hits.length;ht++)if(hits[ht].id==='apply')check(hits[ht].y+hits[ht].h<canvas.size.height-80,'Aplicar sem sobrepor rodape');
+  dirty=false;selection();dirty=false;previewUntil=0;var beforeDraw=drawCount;
+  globalThis.EdyToolsTick();globalThis.EdyToolsTick();check(drawCount===beforeDraw,'Sem redraw ocioso');
+  togglePreview();check(previewing(),'Previa sob demanda');globalThis.EdyToolsTick();check(drawCount>beforeDraw,'Previa desenha');
+  previewUntil=Date.now()-1;globalThis.EdyToolsTick();check(previewUntil===0,'Previa encerra automaticamente');
+  beforeDraw=drawCount;globalThis.EdyToolsTick();check(drawCount===beforeDraw,'Retorno ao repouso');
   writeLn(checks+' verificacoes aprovadas');
 
