@@ -1,3 +1,10 @@
+## EdyMotion 1.0.0-beta
+
+- Novo painel separado para EffectCraft; EdyTools 2.3 preservado.
+- Presets/favoritos/biblioteca, edição de duração/posição temporal/remoção, seis modelos editáveis e mídia pessoal.
+- Ações de keyframes com proteção contra colisões e rollback; texto mantém frames intermediários.
+- 795 verificações no motor real e instalador independente.
+
 ## EdyTools 2.3.0-beta
 
 - Organizador de projeto em Camadas: pastas por tipo, análise de quantidades e escopo inteiro/raiz.

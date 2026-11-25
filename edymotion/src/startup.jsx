@@ -1,0 +1,10 @@
+  fillList(objState);fillList(textState);loadCurves();theme();layout();
+  ui.onResize=ui.onResizing=layout;
+  if(!globalThis.__EdyMotionInstances)globalThis.__EdyMotionInstances={};
+  var instanceId='em'+Date.now()+'_'+Math.floor(Math.random()*1000000);
+  globalThis.__EdyMotionInstances[instanceId]=function(){theme();if(emPage===0||emPage===1||emPage===4)selection();var playing=previewing();if(previewUntil&&!playing){previewUntil=0;dirty=true;}if(dirty||playing){canvas.notify('onDraw');dirty=false;}};
+  var task=app.scheduleTask('globalThis.__EdyMotionInstances["'+instanceId+'"]&&globalThis.__EdyMotionInstances["'+instanceId+'"]()',120,true);
+  ui.onClose=function(){app.cancelTask(task);delete globalThis.__EdyMotionInstances[instanceId];};
+  if(ui instanceof Window)ui.show();else ui.layout.layout(true);
+  layout();
+})(this);
