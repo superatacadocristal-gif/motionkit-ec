@@ -1,4 +1,4 @@
-/* EdyMotion 1.0.0-beta — by Edy Bastos — 11/2026
+/* EdyMotion 1.1.0-beta — by Edy Bastos — 11/2026
  * MIT. Interface original e motor de ferramentas derivado do MotionKit EC.
  */
 

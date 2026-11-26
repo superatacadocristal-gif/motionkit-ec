@@ -1,3 +1,9 @@
+## EdyMotion 1.1.0-beta
+
+- Texto em série por letras/palavras com fade, subida e máquina de escrever, entrada/saída/ambos.
+- Transições de cortina, flash e escurecimento em camada independente, no corte ou na agulha.
+- Telas compactas em Mais; 1.036 verificações e renders reais. EdyTools preservado.
+
 ## EdyMotion 1.0.0-beta
 
 - Novo painel separado para EffectCraft; EdyTools 2.3 preservado.

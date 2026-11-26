@@ -5,7 +5,7 @@ const wave=Buffer.alloc(8044,128);wave.write('RIFF',0);wave.writeUInt32LE(8036,4
 let legacy=fs.readFileSync(path.join(root,'../tests/edytools-cases.jsx'),'utf8').replaceAll('EdyTools','EdyMotion').replaceAll('globalThis.EdyMotionTick()','globalThis.__EdyMotionInstances[instanceId]()');
 legacy=legacy.replace("mkPresets[p].kind==='highlight'?animator.property('ADBE Text Animator Properties').property(1):animator.property('ADBE Text Selectors').property(1).property('ADBE Text Percent Start')","animator.property('ADBE Text Animator Properties').property(1)");
 let cases='var fixtureDir='+JSON.stringify(work.replace(/\\/g,'/'))+';var emFixtureDir=fixtureDir;\n'+legacy;
-for(const f of ['keyframes.jsx','content.jsx','engine-fixes.jsx','lifecycle.jsx']){const p=path.join(root,'tests',f);if(fs.existsSync(p)&&(!process.env.EM_TESTS||process.env.EM_TESTS.split(',').includes(f)))cases+='\n'+fs.readFileSync(p,'utf8').replace('emContentComp.time=1;','emContentComp.openInViewer();emContentComp.time=1;');}
+for(const f of ['keyframes.jsx','content.jsx','engine-fixes.jsx','lifecycle.jsx','text-sequences.jsx','transitions.jsx']){const p=path.join(root,'tests',f);if(fs.existsSync(p)&&(!process.env.EM_TESTS||process.env.EM_TESTS.split(',').includes(f)))cases+='\n'+fs.readFileSync(p,'utf8').replace('emContentComp.time=1;','emContentComp.openInViewer();emContentComp.time=1;');}
 cases+='\nwriteLn("Keyframe checks: "+emRunKeyframeTests());';
 const source=fs.readFileSync(path.join(root,'EdyMotion.jsx'),'utf8').replace('})(this);',cases+'\n})(this);');
 fs.writeFileSync(path.join(work,'regression.jsx'),source);

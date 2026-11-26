@@ -1,8 +1,8 @@
-## EdyMotion 1.0.0-beta — novo painel independente
+## EdyMotion 1.1.0-beta — novo painel independente
 
 Para EffectCraft. Mantém o EdyTools instalado. Biblioteca de animações, edição de aplicações, modelos originais, mídia pessoal e ações de keyframes.
 
-[Guia e código](./edymotion/README.md) · [Instalador Windows](./downloads/EdyMotion-1.0.0-beta-Windows.zip) · [Script](./edymotion/EdyMotion.jsx)
+[Guia e código](./edymotion/README.md) · [Instalador Windows](./downloads/EdyMotion-1.1.0-beta-Windows.zip) · [Script](./edymotion/EdyMotion.jsx)
 
 ## EdyTools 2.3.0-beta
 
